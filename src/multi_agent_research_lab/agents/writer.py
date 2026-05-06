@@ -1,19 +1,41 @@
-"""Writer agent skeleton."""
-
 from multi_agent_research_lab.agents.base import BaseAgent
-from multi_agent_research_lab.core.errors import StudentTodoError
 from multi_agent_research_lab.core.state import ResearchState
+from multi_agent_research_lab.services.llm_client import LLMClient
+from multi_agent_research_lab.core.schemas import AgentResult, AgentName  
 
 
 class WriterAgent(BaseAgent):
-    """Produces final answer from research and analysis notes."""
-
     name = "writer"
 
+    def __init__(self):
+        self.llm = LLMClient()
+
     def run(self, state: ResearchState) -> ResearchState:
-        """Populate `state.final_answer`.
+        prompt = f"""
+Question: {state.request.query}
 
-        TODO(student): Synthesize a clear response with citations or source references.
-        """
+Research:
+{state.research_notes}
 
-        raise StudentTodoError("TODO(student): implement WriterAgent.run")
+Analysis:
+{state.analysis_notes}
+
+Write final answer.
+"""
+        resp = self.llm.complete("You are a writer.", prompt)
+
+        state.final_answer = resp.content
+
+        state.agent_results.append(
+            AgentResult(
+                agent=AgentName.WRITER,
+                content=resp.content,
+                metadata={
+                    "cost_usd": resp.cost_usd,
+                    "input_tokens": resp.input_tokens,
+                    "output_tokens": resp.output_tokens,
+                },
+            )
+        )
+
+        return state

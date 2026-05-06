@@ -1,19 +1,25 @@
-"""Researcher agent skeleton."""
-
 from multi_agent_research_lab.agents.base import BaseAgent
-from multi_agent_research_lab.core.errors import StudentTodoError
 from multi_agent_research_lab.core.state import ResearchState
+from multi_agent_research_lab.services.search_client import SearchClient
 
 
 class ResearcherAgent(BaseAgent):
-    """Collects sources and creates concise research notes."""
-
     name = "researcher"
 
+    def __init__(self):
+        self.search = SearchClient()
+
     def run(self, state: ResearchState) -> ResearchState:
-        """Populate `state.sources` and `state.research_notes`.
+        sources = self.search.search(
+            state.request.query,
+            state.request.max_sources
+        )
 
-        TODO(student): Implement search, source filtering, citation capture, and notes.
-        """
+        state.add_trace_event("research", {"num_sources": len(sources)})
 
-        raise StudentTodoError("TODO(student): implement ResearcherAgent.run")
+        notes = "\n".join(f"- {s.title}: {s.snippet}" for s in sources)
+
+        state.sources = sources
+        state.research_notes = notes
+
+        return state
